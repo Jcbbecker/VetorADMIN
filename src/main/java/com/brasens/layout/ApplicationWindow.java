@@ -1,10 +1,18 @@
 package com.brasens.layout;
 
+import com.brasens.Config;
 import com.brasens.Vetor;
+import com.brasens.http.HTTPRequests;
+import com.brasens.http.HTTPResponse;
 import com.brasens.http.NetworkManager;
+import com.brasens.http.Update;
+import com.brasens.http.objects.HttpStatusCode;
 import com.brasens.http.objects.Token;
 import com.brasens.javafx.utils.NodeUtils;
 import com.brasens.javafx.utils.Page;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.layout.*;
@@ -62,6 +70,7 @@ public class ApplicationWindow extends AnchorPane {
         networkManager = new NetworkManager(new Token());
         viewManager = new ViewManager(this, networkManager);
 
+        viewManager.init();
         viewManager.setup(this);
 
         setPrefSize(LayoutSizeManager.getResizedWidth(1280), LayoutSizeManager.getResizedHeight(800));
@@ -91,8 +100,32 @@ public class ApplicationWindow extends AnchorPane {
 
         borderPane.getStyleClass().add("body");
 
-        changePage(viewManager.getClientRegisterView());
-        BorderPane.setAlignment(viewManager.getClientRegisterView(), Pos.CENTER);
+        changePage(viewManager.getDashboardView());
+        BorderPane.setAlignment(viewManager.getDashboardView(), Pos.CENTER);
+
+        Update appUpdate = new Update();
+        try {
+            System.out.println("try update");
+            HTTPResponse statusResponse = HTTPRequests.GET(
+                    Config.BACKEND_HOST_UPDATE_ENDPOINT,
+                    ""
+            );
+
+            if (statusResponse.getCode() == HttpStatusCode.OK) {
+                String responseData = statusResponse.getContent();
+                if (responseData != null) {
+                    final ObjectMapper objectMapperData = new ObjectMapper();
+                    objectMapperData.registerModule(new JavaTimeModule());
+                    appUpdate = objectMapperData.readValue(responseData, new TypeReference<Update>() {
+                    });
+                    if(!appUpdate.getVersion().equals(Config.APP_VERSION))
+                        Vetor.openUpdatePopUp(appUpdate);
+                }
+                System.out.println(appUpdate.toString());
+            }
+        }catch (Exception e){
+            Vetor.printNicerStackTrace(e);
+        }
 
         getChildren().addAll(borderPane);
     }

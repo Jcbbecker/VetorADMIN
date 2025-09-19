@@ -1,5 +1,7 @@
 package com.brasens;
 
+import com.brasens.http.Employees;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -14,11 +16,11 @@ import java.util.UUID;
 @NoArgsConstructor
 @JsonSerialize
 public class Tank {
-
     private UUID id;
 
-    int tank1;
-    int tank2;
-
-    String key;
+    private int tank1;
+    private int tank2;
+    private String name;
+    private String key;
+    private Employees employee;
 }

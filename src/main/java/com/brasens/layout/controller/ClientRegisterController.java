@@ -2,6 +2,7 @@ package com.brasens.layout.controller;
 
 import com.brasens.Config;
 import com.brasens.Vetor;
+import com.brasens.http.Employees;
 import com.brasens.http.HTTPRequests;
 import com.brasens.http.HTTPResponse;
 import com.brasens.http.objects.HttpStatusCode;
@@ -46,13 +47,23 @@ public class ClientRegisterController extends Controller {
             Vetor.openActionPopUp("Erro", "As senhas não coincidem", ActionStatusPopUp.ActionStatus.ERROR);
             return;
         }
-
-        if(!sendClientRegisterRequest(name, email, password))
+        String employeeID = sendClientRegisterRequest(name, email, password);
+        if(employeeID == null)
             Vetor.openActionPopUp("Erro", "Falha ao registrar usuario", ActionStatusPopUp.ActionStatus.ERROR);
         else {
+
+            clientRegisterView.getNameField().clear();
+            clientRegisterView.getEmailField().clear();
+            clientRegisterView.getPasswordField().clear();
+            clientRegisterView.getConfirmPasswordField().clear();
+            clientRegisterView.getSensorCode().clear();
+
+            onBackClick();
+            Vetor.openActionPopUp("Concluido", "Usuario registrado!", ActionStatusPopUp.ActionStatus.OK);
+            /*
             String token = getToken(email, password);
             System.out.println(token);
-            if (!sendSensorCodeRequest(sensorCode, token))
+            if (!sendSensorCodeRequest(sensorCode, token, employeeID))
                 Vetor.openActionPopUp("Erro", "Falha ao registrar sensor", ActionStatusPopUp.ActionStatus.ERROR);
             else {
                 Vetor.openActionPopUp("Concluido", "Usuario registrado!", ActionStatusPopUp.ActionStatus.OK);
@@ -61,11 +72,11 @@ public class ClientRegisterController extends Controller {
                 clientRegisterView.getPasswordField().clear();
                 clientRegisterView.getConfirmPasswordField().clear();
                 clientRegisterView.getSensorCode().clear();
-            }
+            }*/
         }
     }
 
-    public boolean sendClientRegisterRequest(String name, String email, String password) {
+    public String sendClientRegisterRequest(String name, String email, String password) {
         Map<String, String> myMap = new HashMap<>();
         myMap.put("name", name);
         myMap.put("email", email);
@@ -76,13 +87,12 @@ public class ClientRegisterController extends Controller {
         System.out.println("Registrando usuario:");
         try {
             HTTPResponse response = HTTPRequests.POST(Config.BACKEND_HOST_CLIENT_REGISTER, json);
-
-            return response.getCode() == HttpStatusCode.OK;
+            return response.getContent();
         } catch (Exception e) {
             Vetor.printNicerStackTrace(e);
             Vetor.openActionPopUp("Erro", "Falha ao conectar ao servidor", ActionStatusPopUp.ActionStatus.ERROR);
         }
-        return false;
+        return null;
     }
 
     public String getToken(String email, String password) {
@@ -104,17 +114,26 @@ public class ClientRegisterController extends Controller {
         return "";
     }
 
-    public boolean sendSensorCodeRequest(String sensorCode, String token) {
-        Map<String, String> bodyMap = new HashMap<>();
-        bodyMap.put("key", sensorCode);
+    public boolean sendSensorCodeRequest(String sensorCode, String token, String employeeID) {
+        try {
+        Map<String, Object> tankData = new HashMap<>();
+        tankData.put("key", sensorCode);
+        tankData.put("name", "Tanque " + sensorCode);
+        tankData.put("tank1", 0);
+        tankData.put("tank2", 0);
+        tankData.put("employeeId", employeeID);
 
         Gson gson = new GsonBuilder().create();
-        String json = gson.toJson(bodyMap);
+        String json = gson.toJson(tankData);
+
+        HTTPResponse response = HTTPRequests.POST(
+                Config.BACKEND_HOST_ADD_TANK,
+                "",
+                json
+        );
 
         System.out.println("Registrando sensor...");
 
-        try {
-            HTTPResponse response = HTTPRequests.POST(Config.BACKEND_HOST_CLIENT_REGISTER_SENSOR, token, json);
             return response.getCode() == HttpStatusCode.OK;
         } catch (Exception e) {
             Vetor.printNicerStackTrace(e);
@@ -123,5 +142,8 @@ public class ClientRegisterController extends Controller {
         return false;
     }
 
+    public void onBackClick() {
+        applicationWindow.changePage(applicationWindow.getViewManager().getDashboardView());
+    }
 
 }

@@ -1,9 +1,12 @@
 package com.brasens;
 
 import atlantafx.base.theme.*;
+import com.brasens.http.Update;
 import com.brasens.layout.ApplicationWindow;
 import com.brasens.layout.LayoutSizeManager;
+import com.brasens.layout.components.UpdatePopup;
 import com.brasens.layout.controller.fxml.ActionStatusPopUp;
+import com.brasens.utilities.FilesManager;
 import javafx.animation.PauseTransition;
 import javafx.application.Application;
 import javafx.application.ConditionalFeature;
@@ -31,7 +34,7 @@ public class Vetor extends Application {
 
     @Override
     public void start(Stage stage) {
-
+        FilesManager.applicationDirCreator();
         System.out.println("APP_VERSION: "+ APP_VERSION);
 
         var root = new ApplicationWindow();
@@ -118,6 +121,40 @@ public class Vetor extends Application {
         }
 
     }
+    public static void openUpdatePopUp(Update update) {
+        try {
+            var root = new UpdatePopup(update);
+            var antialiasing = Platform.isSupported(ConditionalFeature.EFFECT)
+                    ? SceneAntialiasing.BALANCED
+                    : SceneAntialiasing.DISABLED;
 
+            Scene scene = new Scene(root, ApplicationWindow.MIN_WIDTH + 80, 768, false, antialiasing);
 
+            Application.setUserAgentStylesheet(new PrimerLight().getUserAgentStylesheet());
+
+            scene.getStylesheets().add(Vetor.class.getResource("/mspm/pages/DashboardCSS.css").toString());
+
+            Stage stage = new Stage();
+            stage.setResizable(false);
+
+            stage.setHeight(LayoutSizeManager.getResizedHeight(600));
+            stage.setWidth(LayoutSizeManager.getResizedWidth(450));
+
+            stage.setScene(scene);
+            stage.initStyle(StageStyle.UTILITY);
+            stage.setTitle("Nova versão disponivel");
+
+            stage.show();
+
+            //PauseTransition delay = new PauseTransition(Duration.seconds(2));
+            //delay.setOnFinished( event -> stage.close() );
+            //delay.play();
+        } catch (Exception e) {
+            printNicerStackTrace(e);
+        }
+    }
+    public static boolean openConfirmationPopUp(String title, String text) {
+        // Implementar diálogo de confirmação se necessário
+        return true;
+    }
 }
